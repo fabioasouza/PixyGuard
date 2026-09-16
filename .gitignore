@@ -4,3 +4,5 @@ dist/
 *.sha256
 build/
 DerivedData/
+
+.build/
