@@ -6,7 +6,7 @@ PRIVACY_ON_LOCK="${3:-true}"
 AUTO_TRACKING="${4:-true}"
 NORMAL_WHEN_IDLE="${5:-true}"
 LANG_CODE="${6:-en}"
-VERSION="0.5.12-unified"
+VERSION="0.5.13-unified"
 APP="/Applications/PixyGuard.app"
 APP_SUPPORT="$HOME/Library/Application Support/PixyGuard"
 LOG_DIR="$HOME/Library/Logs/PixyGuard"
@@ -24,8 +24,8 @@ finalize_installed_pixyguard() {
   /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleName PixyGuard" "$APP/Contents/Info.plist"
   /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName PixyGuard" "$APP/Contents/Info.plist"
   /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$APP/Contents/Info.plist"
-  /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 0.5.12-unified" "$APP/Contents/Info.plist"
-  /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 512" "$APP/Contents/Info.plist"
+  /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 0.5.13-unified" "$APP/Contents/Info.plist"
+  /usr/bin/sudo /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 513" "$APP/Contents/Info.plist"
 
   echo "🎨 Rebuilding all AppIcon representations..."
   local ICON="$APP/Contents/Resources/AppIcon.icns"
@@ -63,7 +63,7 @@ finalize_installed_pixyguard() {
   "$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
   "$LSREGISTER" -f "$APP" >/dev/null 2>&1 || true
 
-  echo "✅ Installed bundle finalized as com.fabioasouza.pixyguard / 0.5.12-unified (512)"
+  echo "✅ Installed bundle finalized as com.fabioasouza.pixyguard / 0.5.13-unified (512)"
 }
 
 BUNDLE_ID="com.fabioasouza.pixyguard"
@@ -282,8 +282,8 @@ echo "🔎 Building CoreMediaIO PIXY usage probe..."
 /usr/libexec/PlistBuddy -c 'Set :CFBundleName PixyGuard' "$TMPAPP/Contents/Info.plist" 2>/dev/null || /usr/libexec/PlistBuddy -c 'Add :CFBundleName string PixyGuard' "$TMPAPP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName PixyGuard' "$TMPAPP/Contents/Info.plist" 2>/dev/null || /usr/libexec/PlistBuddy -c 'Add :CFBundleDisplayName string PixyGuard' "$TMPAPP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.fabioasouza.pixyguard' "$TMPAPP/Contents/Info.plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.5.12-unified' "$TMPAPP/Contents/Info.plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 512' "$TMPAPP/Contents/Info.plist" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 0.5.13-unified' "$TMPAPP/Contents/Info.plist" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 513' "$TMPAPP/Contents/Info.plist" 2>/dev/null || true
 
 mkdir -p "$TMPAPP/Contents/Resources/PixyGuardNotices"
 /bin/cp "$SCRIPT_RES/TERMS.txt" "$SCRIPT_RES/PRIVACY.txt" "$SCRIPT_RES/THIRD-PARTY-NOTICES.txt" "$SCRIPT_RES/LICENSE.txt" "$TMPAPP/Contents/Resources/PixyGuardNotices/"
@@ -294,7 +294,7 @@ if [[ -w /Applications ]]; then /bin/rm -rf "$APP"; /usr/bin/ditto "$TMPAPP" "$A
 # Seed unified app preferences chosen in wizard.
 /usr/bin/defaults write "$BUNDLE_ID" privacyOnLock -bool "$PRIVACY_ON_LOCK"
 /usr/bin/defaults write "$BUNDLE_ID" autoTracking -bool "$AUTO_TRACKING"
-/usr/bin/defaults write "$BUNDLE_ID" normalWhenIdle -bool "$NORMAL_WHEN_IDLE"
+/usr/bin/defaults write "$BUNDLE_ID" normalWhenIdle -bool true
 /usr/bin/defaults write "$BUNDLE_ID" uiLanguage -string "$LANG_CODE"
 
 

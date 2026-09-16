@@ -417,34 +417,15 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func guardScreenLocked() -> Bool {
-        // Primary source: the exact IORegistry signal validated during dogfooding.
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
-        process.arguments = ["-n", "Root", "-d1"]
-
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            if process.terminationStatus == 0 {
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                if let text = String(data: data, encoding: .utf8) {
-                    return text.contains("\"CGSSessionScreenIsLocked\" = Yes")
-                }
-            }
-        } catch {
-            // Fall through to CGSession fallback.
-        }
-
         guard let dictionary = CGSessionCopyCurrentDictionary() as? [String: Any] else {
-            return true
+            return false
         }
-        if let value = dictionary["CGSSessionScreenIsLocked"] as? Bool { return value }
-        if let value = dictionary["CGSSessionScreenIsLocked"] as? NSNumber { return value.boolValue }
+        if let value = dictionary["CGSSessionScreenIsLocked"] as? Bool {
+            return value
+        }
+        if let value = dictionary["CGSSessionScreenIsLocked"] as? NSNumber {
+            return value.boolValue
+        }
         return false
     }
 
