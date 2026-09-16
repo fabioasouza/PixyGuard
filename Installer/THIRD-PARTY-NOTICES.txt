@@ -1,0 +1,8 @@
+PixyGuard Third-Party Notices — 0.5.2-unified
+
+PixyGuard builds on the open-source PixyBar project by RoseWaveStudio:
+https://github.com/RoseWaveStudio/PixyBar
+
+PixyBar is distributed under the MIT License. During installation PixyGuard downloads the upstream source and preserves the upstream LICENSE inside the installed application bundle.
+
+PixyGuard is an independent community project. It is not affiliated with, endorsed by, or sponsored by EMEET or Apple.

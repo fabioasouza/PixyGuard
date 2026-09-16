@@ -1,0 +1,13 @@
+PixyGuard Terms of Use — 0.5.2-unified
+
+PixyGuard is an independent community project and is not affiliated with, endorsed by, or sponsored by EMEET or Apple. EMEET, PIXY, macOS, Apple and related marks belong to their respective owners.
+
+The software controls camera hardware and relies on behavior exposed by macOS, camera firmware, and third-party applications. Compatibility can change after OS, firmware, hardware, or application updates.
+
+PixyGuard is provided “AS IS”, without warranties of any kind, express or implied, to the maximum extent permitted by applicable law. Use is at your own risk. PixyGuard’s Privacy mode automation is a convenience feature and must not be treated as the sole security or privacy control for sensitive environments.
+
+To the maximum extent permitted by applicable law, the authors and contributors are not liable for indirect, incidental, special, consequential, or other damages arising from use or inability to use the software.
+
+By installing or using PixyGuard, you accept these terms and the included license.
+
+This document is a practical project baseline, not legal advice.

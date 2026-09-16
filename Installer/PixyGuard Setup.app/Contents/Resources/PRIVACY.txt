@@ -1,0 +1,17 @@
+PixyGuard Privacy Notice — 0.5.9-unified
+
+PixyGuard is designed to operate locally on your Mac.
+
+PixyGuard does NOT intentionally:
+- record or save camera video frames;
+- record audio;
+- record keyboard input or keystrokes;
+- upload camera content;
+- send analytics or telemetry;
+- create a user account.
+
+PixyGuard reads local camera-device metadata such as whether the EMEET PIXY is connected or currently in use by another application. It also reads the local macOS session state (for example, locked/unlocked) and sends local HID control commands to the camera.
+
+macOS may classify the low-level HID permission under Input Monitoring. PixyGuard requests this permission to control the PIXY HID interface, not to inspect keyboard content.
+
+Local diagnostic logs may contain timestamps and camera/control status. They remain on the Mac unless the user chooses to share them.

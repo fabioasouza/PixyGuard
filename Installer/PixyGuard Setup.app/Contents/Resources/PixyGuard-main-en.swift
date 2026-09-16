@@ -79,7 +79,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private var guardAutoTracking = true
     private var guardNormalWhenIdle = true
     private var guardSleeping = false
-    private var guardLastLockedState: Bool?
     private var guardCurrentMode = "unknown"
     private var guardTimer: Timer?
     private var guardPendingMode: String?
@@ -347,24 +346,9 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startGuardAutomation() {
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(guardWillSleep),
-            name: NSWorkspace.willSleepNotification,
-            object: nil
-        )
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(guardDidWake),
-            name: NSWorkspace.didWakeNotification,
-            object: nil
-        )
-
-        guardLastLockedState = guardScreenLocked() || guardSleeping
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(guardWillSleep), name: NSWorkspace.willSleepNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(guardDidWake), name: NSWorkspace.didWakeNotification, object: nil)
         guardTick()
-
-        // Mirrors the dogfooding watcher that proved reliable on real lock/unlock cycles.
-        // No Input Monitoring permission is required.
         guardTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.guardTick()
         }
@@ -417,30 +401,8 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func guardScreenLocked() -> Bool {
-        // Primary source: the exact IORegistry signal validated during dogfooding.
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
-        process.arguments = ["-n", "Root", "-d1"]
-
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            if process.terminationStatus == 0 {
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                if let text = String(data: data, encoding: .utf8) {
-                    return text.contains("\"CGSSessionScreenIsLocked\" = Yes")
-                }
-            }
-        } catch {
-            // Fall through to CGSession fallback.
-        }
-
         guard let dictionary = CGSessionCopyCurrentDictionary() as? [String: Any] else {
+            // Fail closed: if lock state cannot be determined, prefer privacy.
             return true
         }
         if let value = dictionary["CGSSessionScreenIsLocked"] as? Bool { return value }
@@ -470,13 +432,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let locked = guardScreenLocked() || guardSleeping
-
-        if let previousLocked = guardLastLockedState, previousLocked != locked {
-            guardPendingMode = nil
-            guardCurrentMode = "unknown"
-        }
-        guardLastLockedState = locked
-
         let inUse = guardPixyIsRunning()
         let desired: String?
 
@@ -522,9 +477,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func guardWillSleep() {
         guardSleeping = true
-        guardLastLockedState = true
-        guardPendingMode = nil
-
         if guardPrivacyOnLock {
             guardCurrentMode = "unknown"
             guardApplyMode("privacy")
@@ -533,8 +485,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func guardDidWake() {
         guardSleeping = false
-        guardLastLockedState = nil
-        guardPendingMode = nil
         guardCurrentMode = "unknown"
         guardTick()
     }

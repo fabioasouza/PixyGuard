@@ -1,0 +1,172 @@
+#!/bin/zsh
+set -euo pipefail
+SELF_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RES="$SELF_DIR/Resources"
+STATUS="/tmp/pixyguard-setup-$(id -u).status"
+rm -f "$STATUS"
+
+q() { /usr/bin/osascript - "$@"; }
+
+choose_language() {
+  /usr/bin/osascript <<'OSA'
+set x to choose from list {"English", "Português (Brasil)"} with title "PixyGuard Setup" with prompt "Choose your language / Escolha seu idioma" default items {"English"} OK button name "Continue" cancel button name "Cancel"
+if x is false then error number -128
+return item 1 of x
+OSA
+}
+
+LANGUAGE="$(choose_language)"
+[[ "$LANGUAGE" == "Português (Brasil)" ]] && LANG_CODE="pt-BR" || LANG_CODE="en"
+
+if [[ "$LANG_CODE" == "pt-BR" ]]; then
+  WELCOME_TITLE="Bem-vindo ao PixyGuard"
+  WELCOME_BODY="Um único app na barra de menus: controles PIXY + automações Guard.\n\n• Bloqueio/repouso → Privacy\n• Qualquer app usando a PIXY → Tracking\n• Stream encerrado → Normal\n• PTZ e presets continuam no mesmo lugar"
+  NEXT="Próximo"; BACK="Voltar"; CANCEL="Cancelar"; ON="Ligado"; OFF="Desligado"
+  TERMS_TITLE="Licença, privacidade e avisos"
+  TERMS_BODY="PixyGuard é um projeto comunitário independente, não afiliado à EMEET ou Apple. Não grava vídeo, áudio ou teclas e não envia telemetria. O software é fornecido 'como está', sem garantias.\n\nAo continuar, você aceita a licença e os termos incluídos neste instalador."
+  VIEW="Abrir documentos"; AGREE="Concordar e continuar"
+  INSTALL_TITLE="Pronto para instalar"
+  INSTALL_BODY="O PixyGuard mantém o visual e ícone do PixyBar, PTZ/presets e adiciona as automações Guard nesse mesmo menu.\n\nDurante a instalação abriremos Ajustes do Sistema → Privacidade e Segurança → Monitoramento de Entrada para a permissão HID da câmera."
+  INSTALL="Instalar"
+else
+  WELCOME_TITLE="Welcome to PixyGuard"
+  WELCOME_BODY="One menu-bar app: PIXY controls + Guard automation.\n\n• Lock/sleep → Privacy\n• Any app using PIXY → Tracking\n• Stream closes → Normal\n• PTZ and presets stay in the same place"
+  NEXT="Next"; BACK="Back"; CANCEL="Cancel"; ON="On"; OFF="Off"
+  TERMS_TITLE="License, privacy & notices"
+  TERMS_BODY="PixyGuard is an independent community project and is not affiliated with EMEET or Apple. It does not record video, audio, or keystrokes and does not send telemetry. The software is provided 'as is', without warranties.\n\nBy continuing, you accept the license and terms included with this installer."
+  VIEW="Open documents"; AGREE="Agree & Continue"
+  INSTALL_TITLE="Ready to install"
+  INSTALL_BODY="PixyGuard keeps the PixyBar look, icon, PTZ and presets, and adds Guard automation into that same menu.\n\nDuring setup we will open System Settings → Privacy & Security → Input Monitoring for the camera HID permission."
+  INSTALL="Install"
+fi
+
+# Detect existing installation.
+MODE="install"
+if [[ -d /Applications/PixyGuard.app || -d /Applications/PixyBar.app || -d "$HOME/Library/Application Support/PixyGuard" ]]; then
+  if [[ "$LANG_CODE" == "pt-BR" ]]; then
+    ACTION=$(/usr/bin/osascript <<'OSA'
+button returned of (display dialog "Encontramos uma instalação anterior.\n\nReinstalação limpa remove PixyGuard/PixyBar e instala novamente.\nDesinstalar remove tudo e para." buttons {"Desinstalar", "Atualizar", "Reinstalação limpa"} default button "Reinstalação limpa" with title "PixyGuard Setup")
+OSA
+)
+    [[ "$ACTION" == "Desinstalar" ]] && MODE="uninstall"
+    [[ "$ACTION" == "Atualizar" ]] && MODE="upgrade"
+    [[ "$ACTION" == "Reinstalação limpa" ]] && MODE="clean"
+  else
+    ACTION=$(/usr/bin/osascript <<'OSA'
+button returned of (display dialog "An existing installation was found.\n\nClean Reinstall removes PixyGuard/PixyBar first and installs a fresh copy.\nUninstall removes everything and stops." buttons {"Uninstall", "Upgrade", "Clean Reinstall"} default button "Clean Reinstall" with title "PixyGuard Setup")
+OSA
+)
+    [[ "$ACTION" == "Uninstall" ]] && MODE="uninstall"
+    [[ "$ACTION" == "Upgrade" ]] && MODE="upgrade"
+    [[ "$ACTION" == "Clean Reinstall" ]] && MODE="clean"
+  fi
+fi
+
+# Uninstall can run immediately.
+if [[ "$MODE" == "uninstall" ]]; then
+  /usr/bin/osascript - "$RES/setup.sh" "$STATUS" "$LANG_CODE" <<'OSA'
+on run argv
+  set scriptPath to item 1 of argv
+  set statusPath to item 2 of argv
+  set langCode to item 3 of argv
+  tell application "Terminal"
+    activate
+    do script "/bin/zsh " & quoted form of scriptPath & " uninstall " & quoted form of statusPath & " true true true " & quoted form of langCode
+  end tell
+end run
+OSA
+  exit 0
+fi
+
+step=1
+PRIVACY="true"; TRACKING="true"; IDLE="true"
+while (( step <= 5 )); do
+  case $step in
+    1)
+      R=$(/usr/bin/osascript - "$WELCOME_TITLE" "$WELCOME_BODY" "$CANCEL" "$NEXT" <<'OSA'
+on run argv
+  button returned of (display dialog (item 2 of argv) buttons {(item 3 of argv), (item 4 of argv)} default button (item 4 of argv) cancel button (item 3 of argv) with title (item 1 of argv))
+end run
+OSA
+) || exit 0
+      step=2
+      ;;
+    2)
+      if [[ "$LANG_CODE" == "pt-BR" ]]; then TITLE="Privacidade ao bloquear o Mac"; BODY="Recomendado: ao bloquear ou colocar o Mac em repouso, mover fisicamente a PIXY para Privacy."; else TITLE="Privacy on Mac lock"; BODY="Recommended: when the Mac locks or sleeps, physically turn the PIXY away in Privacy mode."; fi
+      R=$(/usr/bin/osascript - "$TITLE" "$BODY" "$BACK" "$OFF" "$ON" <<'OSA'
+on run argv
+  button returned of (display dialog (item 2 of argv) buttons {(item 3 of argv), (item 4 of argv), (item 5 of argv)} default button (item 5 of argv) with title (item 1 of argv))
+end run
+OSA
+)
+      [[ "$R" == "$BACK" ]] && { step=1; continue; }
+      [[ "$R" == "$ON" ]] && PRIVACY="true" || PRIVACY="false"
+      step=3
+      ;;
+    3)
+      if [[ "$LANG_CODE" == "pt-BR" ]]; then TITLE="Tracking automático"; BODY="Recomendado: quando QUALQUER aplicativo abrir o vídeo da PIXY, habilitar Tracking automaticamente."; else TITLE="Automatic Tracking"; BODY="Recommended: whenever ANY application opens the PIXY video stream, enable Tracking automatically."; fi
+      R=$(/usr/bin/osascript - "$TITLE" "$BODY" "$BACK" "$OFF" "$ON" <<'OSA'
+on run argv
+  button returned of (display dialog (item 2 of argv) buttons {(item 3 of argv), (item 4 of argv), (item 5 of argv)} default button (item 5 of argv) with title (item 1 of argv))
+end run
+OSA
+)
+      [[ "$R" == "$BACK" ]] && { step=2; continue; }
+      [[ "$R" == "$ON" ]] && TRACKING="true" || TRACKING="false"
+      step=4
+      ;;
+    4)
+      if [[ "$LANG_CODE" == "pt-BR" ]]; then TITLE="Quando o stream da PIXY fechar"; BODY="Recomendado: retornar a câmera para Normal quando nenhum aplicativo estiver usando a PIXY."; ONLABEL="Voltar para Normal"; OFFLABEL="Manter último modo"; else TITLE="When the PIXY stream closes"; BODY="Recommended: return the camera to Normal mode when no application is using the PIXY."; ONLABEL="Return to Normal"; OFFLABEL="Leave Last Mode"; fi
+      R=$(/usr/bin/osascript - "$TITLE" "$BODY" "$BACK" "$OFFLABEL" "$ONLABEL" <<'OSA'
+on run argv
+  button returned of (display dialog (item 2 of argv) buttons {(item 3 of argv), (item 4 of argv), (item 5 of argv)} default button (item 5 of argv) with title (item 1 of argv))
+end run
+OSA
+)
+      [[ "$R" == "$BACK" ]] && { step=3; continue; }
+      [[ "$R" == "$ONLABEL" ]] && IDLE="true" || IDLE="false"
+      step=5
+      ;;
+    5)
+      R=$(/usr/bin/osascript - "$TERMS_TITLE" "$TERMS_BODY" "$BACK" "$VIEW" "$AGREE" <<'OSA'
+on run argv
+  button returned of (display dialog (item 2 of argv) buttons {(item 3 of argv), (item 4 of argv), (item 5 of argv)} default button (item 5 of argv) with title (item 1 of argv))
+end run
+OSA
+)
+      [[ "$R" == "$BACK" ]] && { step=4; continue; }
+      if [[ "$R" == "$VIEW" ]]; then
+        /usr/bin/open -a TextEdit "$RES/TERMS.txt" "$RES/PRIVACY.txt" "$RES/THIRD-PARTY-NOTICES.txt" "$RES/LICENSE.txt" >/dev/null 2>&1 || true
+        continue
+      fi
+      step=6
+      ;;
+  esac
+done
+
+R=$(/usr/bin/osascript - "$INSTALL_TITLE" "$INSTALL_BODY" "$BACK" "$INSTALL" <<'OSA'
+on run argv
+  button returned of (display dialog (item 2 of argv) buttons {(item 3 of argv), (item 4 of argv)} default button (item 4 of argv) with title (item 1 of argv))
+end run
+OSA
+)
+if [[ "$R" == "$BACK" ]]; then
+  # Re-run the wizard cleanly; the user explicitly asked for Back rather than dead-end navigation.
+  exec "$0"
+fi
+
+/usr/bin/osascript - "$RES/setup.sh" "$MODE" "$STATUS" "$PRIVACY" "$TRACKING" "$IDLE" "$LANG_CODE" <<'OSA'
+on run argv
+  set scriptPath to item 1 of argv
+  set modeName to item 2 of argv
+  set statusPath to item 3 of argv
+  set privacyVal to item 4 of argv
+  set trackingVal to item 5 of argv
+  set idleVal to item 6 of argv
+  set langCode to item 7 of argv
+  tell application "Terminal"
+    activate
+    do script "/bin/zsh " & quoted form of scriptPath & " " & quoted form of modeName & " " & quoted form of statusPath & " " & quoted form of privacyVal & " " & quoted form of trackingVal & " " & quoted form of idleVal & " " & quoted form of langCode
+  end tell
+end run
+OSA

@@ -1,0 +1,6 @@
+.DS_Store
+dist/
+*.dmg
+*.sha256
+build/
+DerivedData/

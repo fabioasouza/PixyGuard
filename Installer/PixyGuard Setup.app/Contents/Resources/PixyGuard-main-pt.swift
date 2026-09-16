@@ -58,10 +58,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private let lastResultLabel = NSTextField(labelWithString: "Ready")
     private let moveStepOptions: [Double] = [1.0, 3.0, 10.0]
     private let presets: [CameraPreset] = [
-        CameraPreset(title: "Center", pan: 0.0, tilt: 0.0),
-        CameraPreset(title: "Desk", pan: 0.0, tilt: -12.0),
-        CameraPreset(title: "Stand", pan: 0.0, tilt: 8.0),
-        CameraPreset(title: "Board", pan: -18.0, tilt: 0.0)
+        CameraPreset(title: "Centro", pan: 0.0, tilt: 0.0),
+        CameraPreset(title: "Mesa", pan: 0.0, tilt: -12.0),
+        CameraPreset(title: "Em pé", pan: 0.0, tilt: 8.0),
+        CameraPreset(title: "Quadro", pan: -18.0, tilt: 0.0)
     ]
 
     private var refreshMenuItem: NSMenuItem?
@@ -79,7 +79,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private var guardAutoTracking = true
     private var guardNormalWhenIdle = true
     private var guardSleeping = false
-    private var guardLastLockedState: Bool?
     private var guardCurrentMode = "unknown"
     private var guardTimer: Timer?
     private var guardPendingMode: String?
@@ -158,16 +157,16 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(makeAutomationMenuItem())
         menu.addItem(.separator())
 
-        let refresh = item("Refresh", #selector(refreshStatus))
+        let refresh = item("Atualizar", #selector(refreshStatus))
         refreshMenuItem = refresh
         menu.addItem(refresh)
 
-        let launchAtLogin = item("Launch at Login", #selector(toggleLaunchAtLogin))
+        let launchAtLogin = item("Abrir ao iniciar sessão", #selector(toggleLaunchAtLogin))
         launchAtLoginMenuItem = launchAtLogin
         menu.addItem(launchAtLogin)
 
         menu.addItem(.separator())
-        menu.addItem(item("Quit", #selector(quit)))
+        menu.addItem(item("Sair", #selector(quit)))
 
         updateLaunchAtLoginState()
         updateMenuState()
@@ -210,19 +209,19 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         controlButtons.removeAll()
 
         let view = NSView(frame: NSRect(x: 0, y: 0, width: 258, height: 334))
-        let cameraLabel = sectionLabel("Camera", frame: NSRect(x: 16, y: 309, width: 226, height: 16))
+        let cameraLabel = sectionLabel("Câmera", frame: NSRect(x: 16, y: 309, width: 226, height: 16))
         view.addSubview(cameraLabel)
 
-        view.addSubview(controlButton(title: "On", symbolName: "video", action: #selector(cameraOn), toolTip: "Camera On", frame: NSRect(x: 16, y: 274, width: 69, height: 30)))
+        view.addSubview(controlButton(title: "Ligada", symbolName: "video", action: #selector(cameraOn), toolTip: "Camera On", frame: NSRect(x: 16, y: 274, width: 69, height: 30)))
 
-        let track = controlButton(title: "Track", symbolName: "scope", action: #selector(toggleTracking), toolTip: "AI Tracking", frame: NSRect(x: 94, y: 274, width: 70, height: 30))
+        let track = controlButton(title: "Tracking", symbolName: "scope", action: #selector(toggleTracking), toolTip: "AI Tracking", frame: NSRect(x: 94, y: 274, width: 70, height: 30))
         track.setButtonType(.toggle)
         trackingButton = track
         view.addSubview(track)
 
-        view.addSubview(controlButton(title: "Off", symbolName: "video.slash", action: #selector(cameraOff), toolTip: "Camera Off", frame: NSRect(x: 173, y: 274, width: 69, height: 30)))
+        view.addSubview(controlButton(title: "Privacy", symbolName: "video.slash", action: #selector(cameraOff), toolTip: "Camera Off", frame: NSRect(x: 173, y: 274, width: 69, height: 30)))
 
-        let trackingHint = NSTextField(labelWithString: "Tracking works while video is open")
+        let trackingHint = NSTextField(labelWithString: "Tracking funciona enquanto o vídeo estiver aberto")
         trackingHint.frame = NSRect(x: 16, y: 252, width: 226, height: 16)
         trackingHint.font = NSFont.systemFont(ofSize: 11)
         trackingHint.textColor = .tertiaryLabelColor
@@ -230,7 +229,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         trackingHint.cell?.lineBreakMode = .byTruncatingTail
         view.addSubview(trackingHint)
 
-        let stepLabel = sectionLabel("Step", frame: NSRect(x: 16, y: 226, width: 226, height: 16))
+        let stepLabel = sectionLabel("Passo", frame: NSRect(x: 16, y: 226, width: 226, height: 16))
         view.addSubview(stepLabel)
         let step = NSSegmentedControl(frame: NSRect(x: 16, y: 196, width: 226, height: 26))
         step.segmentCount = moveStepOptions.count
@@ -246,7 +245,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         stepControl = step
         view.addSubview(step)
 
-        let moveLabel = sectionLabel("Move", frame: NSRect(x: 16, y: 166, width: 226, height: 16))
+        let moveLabel = sectionLabel("Mover", frame: NSRect(x: 16, y: 166, width: 226, height: 16))
         view.addSubview(moveLabel)
 
         view.addSubview(controlButton(title: "", symbolName: "chevron.up", action: #selector(moveUp), toolTip: "Move Up", frame: NSRect(x: 110, y: 132, width: 38, height: 30)))
@@ -255,7 +254,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         view.addSubview(controlButton(title: "", symbolName: "chevron.right", action: #selector(moveRight), toolTip: "Move Right", frame: NSRect(x: 154, y: 98, width: 38, height: 30)))
         view.addSubview(controlButton(title: "", symbolName: "chevron.down", action: #selector(moveDown), toolTip: "Move Down", frame: NSRect(x: 110, y: 64, width: 38, height: 30)))
 
-        let presetLabel = sectionLabel("Presets", frame: NSRect(x: 16, y: 42, width: 226, height: 16))
+        let presetLabel = sectionLabel("Posições", frame: NSRect(x: 16, y: 42, width: 226, height: 16))
         view.addSubview(presetLabel)
 
         let presetsControl = NSSegmentedControl(frame: NSRect(x: 16, y: 12, width: 226, height: 28))
@@ -279,30 +278,30 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makeAutomationMenuItem() -> NSMenuItem {
         let view = NSView(frame: NSRect(x: 0, y: 0, width: 258, height: 126))
 
-        let label = sectionLabel("Automation", frame: NSRect(x: 16, y: 104, width: 226, height: 16))
+        let label = sectionLabel("Automação", frame: NSRect(x: 16, y: 104, width: 226, height: 16))
         view.addSubview(label)
 
-        let privacy = NSButton(checkboxWithTitle: "Privacy on Lock / Sleep", target: self, action: #selector(toggleGuardPrivacy(_:)))
+        let privacy = NSButton(checkboxWithTitle: "Privacy ao bloquear / repousar", target: self, action: #selector(toggleGuardPrivacy(_:)))
         privacy.frame = NSRect(x: 16, y: 77, width: 226, height: 20)
         privacy.font = NSFont.systemFont(ofSize: 11)
         privacy.state = guardPrivacyOnLock ? .on : .off
-        privacy.toolTip = "Physically turn the PIXY away when the Mac locks or sleeps."
+        privacy.toolTip = "Vira fisicamente a PIXY ao bloquear ou colocar o Mac em repouso."
         guardPrivacyButton = privacy
         view.addSubview(privacy)
 
-        let tracking = NSButton(checkboxWithTitle: "Auto Track when PIXY is in use", target: self, action: #selector(toggleGuardTracking(_:)))
+        let tracking = NSButton(checkboxWithTitle: "Tracking automático quando em uso", target: self, action: #selector(toggleGuardTracking(_:)))
         tracking.frame = NSRect(x: 16, y: 53, width: 226, height: 20)
         tracking.font = NSFont.systemFont(ofSize: 11)
         tracking.state = guardAutoTracking ? .on : .off
-        tracking.toolTip = "Enable tracking whenever any app opens the PIXY video stream."
+        tracking.toolTip = "Ativa tracking quando qualquer app abrir o vídeo da PIXY."
         guardTrackingButton = tracking
         view.addSubview(tracking)
 
-        let idle = NSButton(checkboxWithTitle: "Return to Normal when stream closes", target: self, action: #selector(toggleGuardIdle(_:)))
+        let idle = NSButton(checkboxWithTitle: "Voltar ao Normal ao fechar o stream", target: self, action: #selector(toggleGuardIdle(_:)))
         idle.frame = NSRect(x: 16, y: 29, width: 226, height: 20)
         idle.font = NSFont.systemFont(ofSize: 11)
         idle.state = guardNormalWhenIdle ? .on : .off
-        idle.toolTip = "Return to Normal when no application is using the PIXY."
+        idle.toolTip = "Volta ao modo Normal quando nenhum aplicativo estiver usando a PIXY."
         guardIdleButton = idle
         view.addSubview(idle)
 
@@ -347,24 +346,9 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startGuardAutomation() {
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(guardWillSleep),
-            name: NSWorkspace.willSleepNotification,
-            object: nil
-        )
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(guardDidWake),
-            name: NSWorkspace.didWakeNotification,
-            object: nil
-        )
-
-        guardLastLockedState = guardScreenLocked() || guardSleeping
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(guardWillSleep), name: NSWorkspace.willSleepNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(guardDidWake), name: NSWorkspace.didWakeNotification, object: nil)
         guardTick()
-
-        // Mirrors the dogfooding watcher that proved reliable on real lock/unlock cycles.
-        // No Input Monitoring permission is required.
         guardTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.guardTick()
         }
@@ -417,30 +401,8 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func guardScreenLocked() -> Bool {
-        // Primary source: the exact IORegistry signal validated during dogfooding.
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
-        process.arguments = ["-n", "Root", "-d1"]
-
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-
-            if process.terminationStatus == 0 {
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                if let text = String(data: data, encoding: .utf8) {
-                    return text.contains("\"CGSSessionScreenIsLocked\" = Yes")
-                }
-            }
-        } catch {
-            // Fall through to CGSession fallback.
-        }
-
         guard let dictionary = CGSessionCopyCurrentDictionary() as? [String: Any] else {
+            // Fail closed: if lock state cannot be determined, prefer privacy.
             return true
         }
         if let value = dictionary["CGSSessionScreenIsLocked"] as? Bool { return value }
@@ -470,13 +432,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let locked = guardScreenLocked() || guardSleeping
-
-        if let previousLocked = guardLastLockedState, previousLocked != locked {
-            guardPendingMode = nil
-            guardCurrentMode = "unknown"
-        }
-        guardLastLockedState = locked
-
         let inUse = guardPixyIsRunning()
         let desired: String?
 
@@ -522,9 +477,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func guardWillSleep() {
         guardSleeping = true
-        guardLastLockedState = true
-        guardPendingMode = nil
-
         if guardPrivacyOnLock {
             guardCurrentMode = "unknown"
             guardApplyMode("privacy")
@@ -533,8 +485,6 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func guardDidWake() {
         guardSleeping = false
-        guardLastLockedState = nil
-        guardPendingMode = nil
         guardCurrentMode = "unknown"
         guardTick()
     }
